@@ -49,15 +49,16 @@ def main(new_data:bool=True):
         sys = mdof_system(M=M, K=K, C=C, sys_name=sys_name)
         t_out,y,x=sys.simulate_white_noise(t=t)
         cut = int(4/dt)
-        ax[0].plot(t_out, y[:,3*7])
+        ax[0].plot(t_out, y[:,3*7],alpha=0.5)
         ax[0].set_ylabel('Acceleration (m)')
         ax[0].set_xlabel('Time (s)')
         ax[0].grid(which='both', linestyle=':')
         ax[0].axvline(x=cut*dt, color='k', linestyle='--',label='establishement time')
-        ax[1].semilogy(*compute_PSD(y[cut:,3*7],1/dt))
+        ax[1].semilogy(*compute_PSD(y[cut:,3*7],1/dt),alpha=0.5)
         ax[1].set_ylabel('PSD (m^2/Hz)')
         ax[1].set_xlabel('Frequency (Hz)')
         ax[1].grid(which='both', linestyle=':')
+
         plt.show()
         plt.close()      
         break

@@ -10,8 +10,8 @@ class Population:
         m_mean:np.ndarray = np.array([0.5318, 0.4040, 0.4101, 0.4123, 0.3960, 0.3809, 0.4086, 0.3798]),
         k_mean:np.ndarray = 1e3*np.array([1e-6, 56.70, 56.70, 56.70, 56.70, 56.70, 56.70, 56.70]),
         c_mean:np.ndarray = np.array([8.746, 8.791, 8.801, 8.851, 8.714, 8.737, 8.549, 8.752]),
-        m_std:float = 0.05, 
-        k_std:float=0.1, 
+        m_std:float = 0.03, 
+        k_std:float=0.01, 
         c_std:float=0.08):
 
         # Generate N sets of system parameters with random noise
