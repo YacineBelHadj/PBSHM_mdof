@@ -59,9 +59,8 @@ def main(new_data:bool=True):
         ax[1].set_xlabel('Frequency (Hz)')
         ax[1].grid(which='both', linestyle=':')
 
-        plt.show()
-        plt.close()      
-        break
+    plt.show()
+    plt.close()      
 
 
 

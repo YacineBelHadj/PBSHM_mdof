@@ -18,7 +18,7 @@ class Population:
         for i in range(N):
             m_i = np.random.normal(m_mean, m_std)
             k_i = np.random.normal(k_mean, k_std)
-            k_i[0]=1e-6
+            k_i[0]=1e-6 + 0.001*np.random.normal(0,1e-6)
             c_i = np.random.normal(c_mean, c_std)
             self.systems[f'system_{i}']=np.stack((m_i, k_i, c_i))
 
