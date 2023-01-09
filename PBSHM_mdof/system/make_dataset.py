@@ -25,6 +25,13 @@ def add_anomaly(system_params: dict, location: int, anomaly_type: str, anomaly_s
         system_params[key][available_anomaly_types[anomaly_type], location] *= (1-anomaly_size)
     return system_params
 
+def compute_PSD(signal_data:np.ndarray,fs:int):
+    """
+    Computes the power spectral density of a signal.
+    """
+    f, Pxx = signal.welch(signal_data, fs=fs, window='hann', nperseg=1024, noverlap=256)
+    return f, Pxx
+
 def main(new_data:bool=True):
     population = Population()
     if new_data:
@@ -33,15 +40,28 @@ def main(new_data:bool=True):
     else: 
         population.load_systems('data//systems/systems_healthy.json')
 
-    dt= 0.001
-    t = np.arange(0, 40, dt)
+    dt= 0.0025
+    t = np.arange(0, 30, dt)
+    fig,ax=plt.subplots(nrows=2,ncols=1,figsize=(15,5))
+
     for sys_name,sys_param in population.systems.items():
         M, K, C = build_system_matrices(sys_param)
         sys = mdof_system(M=M, K=K, C=C, sys_name=sys_name)
-        y=sys.simulate_white_noise(t=t)
-        plt.plot(t,y)
+        t_out,y,x=sys.simulate_white_noise(t=t)
+        cut = int(4/dt)
+        ax[0].plot(t_out, y[:,3*7])
+        ax[0].set_ylabel('Acceleration (m)')
+        ax[0].set_xlabel('Time (s)')
+        ax[0].grid(which='both', linestyle=':')
+        ax[0].axvline(x=cut*dt, color='k', linestyle='--',label='establishement time')
+        ax[1].semilogy(*compute_PSD(y[cut:,3*7],1/dt))
+        ax[1].set_ylabel('PSD (m^2/Hz)')
+        ax[1].set_xlabel('Frequency (Hz)')
+        ax[1].grid(which='both', linestyle=':')
         plt.show()
-        plt.close()
+        plt.close()      
+        break
+
 
 
   

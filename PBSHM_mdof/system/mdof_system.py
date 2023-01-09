@@ -19,36 +19,37 @@ class mdof_system:
     sys_name: str = 'mdof_system'
 
     def __post_init__(self):
-        self.ndof = self.M.shape[0]
+        self.n_dof = self.M.shape[0]
         self.check_system()
 
+  
     @property
-    @lru_cache()
     def A(self):
         return np.block([[np.zeros((self.n_dof, self.n_dof)), np.eye(self.n_dof)],
                     [-np.linalg.inv(self.M) @ self.K, -np.linalg.inv(self.M) @ self.C]])
+    
     @property
-    @lru_cache()
     def B(self):
-        return np.block([[np.zeros((self.n_dof, self.n_dof))], [np.linalg.inv(self.M)]])
+        return np.block([[np.zeros((self.n_dof, self.n_dof))],
+                     [np.linalg.inv(self.M)]])
+    
     @property
-    @lru_cache()
     def C_o(self):
         return np.block([[np.eye(self.n_dof), np.zeros((self.n_dof, self.n_dof))],
                     [np.zeros((self.n_dof, self.n_dof)), np.eye(self.n_dof)],
                     [-np.linalg.inv(self.M) @ self.K, -np.linalg.inv(self.M) @ self.C]])
+    
     @property
-    @lru_cache()
     def D(self):
-        return np.block([[np.zeros((self.n_dof, self.n_dof))], [np.zeros((self.n_dof, self.n_dof))], [np.eye(self.n_dof)@np.linalg.inv(self.M)]])
+        return np.block([[np.zeros((self.n_dof, self.n_dof))],
+         [np.zeros((self.n_dof, self.n_dof))], 
+         [np.eye(self.n_dof)@np.linalg.inv(self.M)]])
 
     @property
-    @lru_cache()
     def A_discrete(self):
         return expm(self.A * self.dt)
 
     @property
-    @lru_cache()
     def B_discrete(self):
         return np.linalg.solve(self.A_discrete - self.A, self.B)
 
@@ -84,12 +85,11 @@ class mdof_system:
 
     def simulate_homemade(self, t, u, x0=None):
         nsamples = len(t)
-        ninputs = u.shape[1]
         noutputs = self.C_o.shape[0]
-        x = np.zeros((nsamples, self.ndof))
+        x = np.zeros((nsamples, self.n_dof))
         y = np.zeros((nsamples, noutputs))
 
-        x[0,:] = x0 if x0 is not None else np.zeros(self.ndof)
+        x[0,:] = x0 if x0 is not None else np.zeros(self.n_dof)
         for i in range(1,nsamples):
             x[i,:] = self.A_discrete.dot(x[i-1,:]) + self.B_discrete.dot(u[i,:])
             y[i,:] = self.C_o.dot(x[i,:]) + self.D.dot(u[i,:])
@@ -97,13 +97,13 @@ class mdof_system:
 
     def simulate_lsim(self, u:np.ndarray, t:np.ndarray, x0=None):
         sys = lti(self.A, self.B, self.C_o, self.D)
-        return sys.lsim((self.A, self.B, self.C_o, self.D), u, t, X0=x0)
+        return lsim(sys, u, t)
 
     def simulate_white_noise(self,t,location:int = 7):
         nsamples = len(t)
-        amp = np.random.uniform(5,10)
-        scale = np.random.uniform(1,10)
-        u = np.zeros((nsamples,self.ndof))
+        amp = np.random.uniform(0.2,0.4)
+        scale = np.random.uniform(1,2)
+        u = np.zeros((nsamples,self.n_dof))
         u[:,location] = amp*np.random.normal(0,scale,(nsamples,))
         return self.simulate_lsim(t=t,u=u)
     
