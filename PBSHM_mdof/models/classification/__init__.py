@@ -1,0 +1,1 @@
+from PBSHM_mdof.models.classification import dense_nn

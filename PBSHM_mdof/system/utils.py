@@ -1,10 +1,9 @@
-import pickle
+import numpy as np 
+from scipy import signal 
 
-def save_system_params(system_params: dict, filepath: str):
-    with open(filepath, 'wb') as f:
-        pickle.dump(system_params, f)
-
-def load_system_params(filepath: str):
-    with open(filepath, 'rb') as f:
-        system_params = pickle.load(f)
-    return system_params
+def compute_PSD(signal_data:np.ndarray,fs:int):
+    """
+    Computes the power spectral density of a signal.
+    """
+    f, Pxx = signal.welch(signal_data, fs=fs, window='hann', nperseg=1024, noverlap=256)
+    return f, Pxx

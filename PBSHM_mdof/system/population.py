@@ -1,40 +1,88 @@
 import os
 import pickle
 import numpy as np 
+import configparser
 
+from .baseline_config import load_config_file, extract_variables
 class Population:
+    """ class that handels the population of systems. """
+    AVAILABLE_ANOMALY_TYPES = {'mass':0, 'stiffness':1, 'damping':2}
+    
+
     def __init__(self, systems:dict=dict()):
-        self.systems = systems
+        self.systems_params = systems
+        self.systems_matrices =dict()
+        self.state:str = 'healthy'
+        self.anomaly_level = 0
+        self.name:str = 'POPULATION_1' 
 
-    def generate_system_variables(self, N:int=20, 
-        m_mean:np.ndarray = np.array([0.5318, 0.4040, 0.4101, 0.4123, 0.3960, 0.3809, 0.4086, 0.3798]),
-        k_mean:np.ndarray = 1e3*np.array([1e-6, 56.70, 56.70, 56.70, 56.70, 56.70, 56.70, 56.70]),
-        c_mean:np.ndarray = np.array([8.746, 8.791, 8.801, 8.851, 8.714, 8.737, 8.549, 8.752]),
-        m_std:float = 0.03, 
-        k_std:float=0.01, 
-        c_std:float=0.08):
+    def compute_systems_matrices(self):
+        for key,values in self.systems_params.items():
+            self.systems_matrices[key] = build_system_matrices(values)
 
+    def generate_system_variables(self):
+        """ Generates the system parameters for the population of systems.
+        The parameters are generated from a normal distribution with mean and
+        standard deviation specified in the config file.
+        Parameters
+        ----------
+
+        population_name : str, optional
+
+        """
+
+        config= load_config_file()
+        N,N_dof,m_mean, m_std,k_mean,k_std,c_mean,c_std = extract_variables(config,
+        population_name=self.name)
         # Generate N sets of system parameters with random noise
         for i in range(N):
             m_i = np.random.normal(m_mean, m_std)
             k_i = np.random.normal(k_mean, k_std)
             k_i[0]=1e-6 + 0.001*np.random.normal(0,1e-6)
             c_i = np.random.normal(c_mean, c_std)
-            self.systems[f'system_{i}']=np.stack((m_i, k_i, c_i))
+            self.systems_params[f'system_{i}']=np.stack((m_i, k_i, c_i))
+        self.compute_systems_matrices()
 
-    def save_systems(self, filepath):
+    def add_anomaly(self, location: int=5, anomaly_type: str='stiffness', anomaly_size: float = 0.1):
         """
-        Saves the system parameters to the specified filepath.
+        Adds an anomaly to the system specified in a specific location in the system_params dictionary.
+        Available anomaly types: 'stiffness', 'mass', 'damping'
         """
-        with open(filepath, 'wb') as f:
-            pickle.dump(self.systems, f)
+        self.anomaly_level = anomaly_size
 
-    def load_systems(self, filepath):
+        self.state = 'anomalous'
+
+        available_anomaly_types = {'mass':0, 'stiffness':1, 'damping':2}
+        if anomaly_type not in available_anomaly_types.keys():
+            raise ValueError(f"Invalid anomaly type. Choose from {available_anomaly_types.keys()}.")
+        for key,values in self.systems_params.items():
+            arr = np.copy(self.systems_params[key][available_anomaly_types[anomaly_type]])
+            arr[location] *= (1-anomaly_size)
+            self.systems_params[key][available_anomaly_types[anomaly_type]] = arr
+        self.compute_systems_matrices()
+
+    def load_population(self, path:str):
+        """ Loads a population of systems from a pickle file.
+        Parameters
+        ----------
+        path : str
+            Path to the pickle file.
         """
-        Loads the system parameters from the specified filepath.
+        with open(path, 'rb') as f:
+            self.systems_params = pickle.load(f)
+        self.compute_systems_matrices()
+    
+    def save_population(self, path:str):
+        """ Saves a population of systems to a pickle file.
+        Parameters
+        ----------
+        path : str
+            Path to the pickle file.
         """
-        with open(filepath, 'rb') as f:
-            self.systems = pickle.load(f)
+        with open(path, 'wb') as f:
+            pickle.dump(self.systems_params, f)
+            
+
 
 def build_system_matrices(system_params: np.ndarray):
     m = system_params[0]
@@ -53,13 +101,9 @@ def build_system_matrices(system_params: np.ndarray):
         K[i, i+1] = K[i+1, i] = -k[i+1]
 
     K[-1, -1] = k[-1]
-    
-    # Initialize damping matrix
-    #C = np.zeros((n, n))
-    #for i in range(n-1):
-    #    C[i, i] = c[i] + c[i+1]
-    #    C[i, i+1] = C[i+1, i] = -c[i+1]
-
-    #C[-1, -1] = c[-1]
+    # damping matrix
     C = K *1/1e5
     return M, K, C
+
+if __name__ == '__main__':
+    Population().generate_system_variables()

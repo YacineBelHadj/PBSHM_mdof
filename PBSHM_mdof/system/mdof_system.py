@@ -4,7 +4,7 @@ from scipy.linalg import expm
 from scipy.signal import lti , lsim
 import numpy as np
 
-import checks
+from .checks import check_rank_matrix, is_diagonal
 import pandas as pd 
 pd.set_option('display.max_rows', None)
 pd.set_option('display.max_columns', None)
@@ -12,7 +12,7 @@ pd.set_option('display.width', 1000)
 pd.set_option('display.colheader_justify', 'center')
 pd.set_option('display.precision', 3)
 @dataclass
-class mdof_system:
+class Mdof_system:
     M: np.ndarray 
     K: np.ndarray
     C: np.ndarray
@@ -65,8 +65,8 @@ class mdof_system:
                 '{}'.format(name,pd.DataFrame(self.M), pd.DataFrame(self.K), pd.DataFrame(self.C)))
     
     def check_system(self):
-        assert checks.is_diagonal(self.M), "C is not diagonal"
-        assert checks.check_rank_matrix((self.M, self.K, self.C)), "M or K is not full rank"
+        assert is_diagonal(self.M), "C is not diagonal"
+        assert check_rank_matrix((self.M, self.K, self.C)), "M or K is not full rank"
 
     def transfer_function(self,omega:np.ndarray,i:int,j:int):
         s= 1j*omega
@@ -101,11 +101,11 @@ class mdof_system:
 
     def simulate_white_noise(self,t,location:int = 7):
         nsamples = len(t)
-        amp = np.random.uniform(0.2,0.4)
-        scale = np.random.uniform(1,2)
+        scale = np.random.uniform(0.5,30)
+        amplitude = np.random.uniform(0.5,3)
         u = np.zeros((nsamples,self.n_dof))
-        u[:,location] = amp*np.random.normal(0,scale,(nsamples,))
-        return self.simulate_lsim(t=t,u=u)
+        u[:,location] = amplitude*np.random.normal(0,scale,(nsamples,))
+        return u, self.simulate_lsim(t=t,u=u)
     
 
 
