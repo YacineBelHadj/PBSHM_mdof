@@ -13,7 +13,7 @@ def main(new_population:bool=False,dt:float=0.0025,t_end:float=30.0):
         population.save_population('data/systems/systems_healthy.json')
         print('New data generated and saved to data/systems/systems_healthy.json')
     else: 
-        population.load_population('data//systems/systems_healthy.json')
+        population.load_population('data/systems/systems_healthy.json')
         print('Loaded data from data/systems/systems_healthy.json')
     if True:
         with h5py.File('data/raw/datatest.hdf5','w') as f:

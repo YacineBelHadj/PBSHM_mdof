@@ -47,25 +47,22 @@ class HDF5Handler:
             if 'input' not in simulation_ds:
                 simulation_ds.create_dataset('input', shape=sys_data['input'].shape, dtype=sys_data['input'].dtype, data=sys_data['input'])
     
-    def get_data_iterator(self, population:str='*', system:str='*', simulation:str='*'):
-        """
-        Iterate through the data in the HDF5 file, returning a tuple of 
-        (system_name, state, anomaly_level, output_data) for each simulation that matches
-        the specified population, system, and simulation filters.
-        """
-        population_data = self.file[population]
-        for sys_name in population_data:
-            if system != '*' and sys_name != system:
-                continue
-            system_group = population_data[sys_name]
-            for sim_name in system_group:
-                if simulation != '*' and sim_name != simulation:
-                    continue
-                simulation_group = system_group[sim_name]
-                output_data = simulation_group['output'][:]
-                state = population_data.attrs['state']
-                anomaly_level = population_data.attrs['anomaly_level']
-                yield (sys_name, state, anomaly_level, output_data)
+    def get_data_iterator(self):
+        for population_name in self.file:
+            population_group = self.file[population_name]
+            for system_name in population_group:
+                system_group = population_group[system_name]
+                for simulation_name in system_group:
+                    simulation_group = system_group[simulation_name]
+                    if 'output' in simulation_group:
+                        res = {'output':simulation_group['output'][:],
+                        'dt':population_group.attrs['dt'], 
+                        'system_name':system_name, 
+                        'state':population_group.attrs['state'], 
+                        'anomaly_severity':population_group.attrs['anomaly_level']}
+    
+                        yield res
+
     def get_data(self, population:str='*', system:str='*', simulation:str='*'):
         """
         Get the output data, system name, state, and anomaly_severity for all the simulations in the HDF5 file.
