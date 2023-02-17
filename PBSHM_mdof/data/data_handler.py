@@ -6,7 +6,7 @@ class HDF5Handler:
     def __init__(self, file: h5py.File):
         self.file = file
         
-    def save_simulation_data(self,dt,t_end,population:Population, simulation_data: dict,id_simulation:int):
+    def save_simulation_data(self,dt,t_end,population:Population, simulation_data: dict,id_simulation:int,latent_value:float):
         """
         Save simulation data to the HDF5 file.
         simulation_data should be a dictionary with the following structure:
@@ -15,6 +15,8 @@ class HDF5Handler:
                 'population': {
                     'system_1': {
                         'simulation_1': {
+                            attrs: {temperature: temperature}
+                            
                             'output': output_data,
                             'input': input_data
                         },
@@ -34,19 +36,19 @@ class HDF5Handler:
         population_ds.attrs['anomaly_level'] = population.anomaly_level
         for sys_name, sys_data in population.systems_params.items():
             system = population_ds.require_group(sys_name)
-            system.attrs['masses'] = sys_data[0]
-            system.attrs['stiffness'] = sys_data[1]
-            system.attrs['damping'] = sys_data[2]
+            system.attrs['mass'] = sys_data['mass']
+            system.attrs['stiffness'] = sys_data['stiffness']
+            system.attrs['damping'] = sys_data['damping']
             system.attrs['units'] = 'kg, N/m, Ns/m'
-
+        
         for sys_name, sys_data in simulation_data.items():
             
             simulation_ds = population_ds[sys_name].create_group(f'simulation_{id_simulation}')
+            simulation_ds.attrs['latent_value'] = latent_value
             if 'output' not in simulation_ds:
                 simulation_ds.create_dataset('output', shape=sys_data['output'].shape, dtype=sys_data['output'].dtype, data=sys_data['output'])
             if 'input' not in simulation_ds:
                 simulation_ds.create_dataset('input', shape=sys_data['input'].shape, dtype=sys_data['input'].dtype, data=sys_data['input'])
-    
     def get_data_iterator(self):
         for population_name in self.file:
             population_group = self.file[population_name]
@@ -59,7 +61,8 @@ class HDF5Handler:
                         'dt':population_group.attrs['dt'], 
                         'system_name':system_name, 
                         'state':population_group.attrs['state'], 
-                        'anomaly_severity':population_group.attrs['anomaly_level']}
+                        'anomaly_severity':population_group.attrs['anomaly_level'],
+                        'latent_value':simulation_group.attrs['latent_value']}
     
                         yield res
 
