@@ -3,10 +3,11 @@ from config import settings
 from dataclasses import dataclass
 from PBSHM_mdof.system.population import Population
 from PBSHM_mdof.system.simulation import Simulation
-from PBSHM_mdof.system.mdof_system import Mdof_system
+from PBSHM_mdof.system.mdof_system import MdofSystem
 from copy import deepcopy
 import numpy as np
 from typing import Optional, Union, Any
+from pathlib import Path
 
 import pickle
 from dataclasses import dataclass
@@ -97,12 +98,12 @@ class PopulationManipulator:
             return deepcopy(population_to_update)
 
 def read_population_coef_latent():
-    with open('data/systems/systems_latent_coef.pkl','rb') as f:
+    with open(Path(__file__).parent.parent.parent /'data/systems/systems_latent_coef.pkl','rb') as f:
         population_coef_latent = pickle.load(f)
     return population_coef_latent
 
 def write_population_coef_latent(population_coef_latent):
-    with open('data/systems/systems_latent_coef.pkl', 'wb') as f:
+    with open(Path(__file__).parent.parent.parent /'data/systems/systems_latent_coef.pkl', 'wb') as f:
         pickle.dump(population_coef_latent, f)
 
 import matplotlib.pyplot as plt
@@ -120,9 +121,9 @@ if __name__ == "__main__":
     manipulated_population2 = manipulator.affect(requests2)
     omega=np.linspace(0,1000,1000)
     freq = omega/(2*np.pi)
-    h_h = np.abs(Mdof_system(**(population.systems_matrices["system_0"])).transfer_function(omega,1,7))
-    h_m=np.abs(Mdof_system(**(manipulated_population.systems_matrices["system_0"])).transfer_function(omega,1,7))
-    h_m2=np.abs(Mdof_system(**(manipulated_population2.systems_matrices["system_0"])).transfer_function(omega,1,7))
+    h_h = np.abs(MdofSystem(**(population.systems_matrices["system_0"])).transfer_function(omega,1,7))
+    h_m=np.abs(MdofSystem(**(manipulated_population.systems_matrices["system_0"])).transfer_function(omega,1,7))
+    h_m2=np.abs(MdofSystem(**(manipulated_population2.systems_matrices["system_0"])).transfer_function(omega,1,7))
 
 
     plt.plot(freq[100:1300],h_h[100:1300],label='healthy')

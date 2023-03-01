@@ -11,6 +11,10 @@ pd.set_option('display.max_columns', None)
 pd.set_option('display.width', 1000)
 pd.set_option('display.colheader_justify', 'center')
 pd.set_option('display.precision', 3)
+
+import logging
+logger = logging.getLogger(__name__)
+
 @dataclass
 class MdofSystem:
     M: np.ndarray 
@@ -21,6 +25,7 @@ class MdofSystem:
     def __post_init__(self):
         self.n_dof = self.M.shape[0]
         self.check_system()
+
 
   
     @property
@@ -68,27 +73,38 @@ class MdofSystem:
         return np.linalg.eigvals(self.A)[::2]
 
     def eigenvecs(self):
-        
-        return np 
+        return np.linalg.eig(self.A)[1][:self.n_dof,::2]
 
     def resonance_frequency(self):
-        return np.abs(self.eigenvalues()/2/np.pi)[::2]
+        return np.abs(self.eigenvalues()/2/np.pi)
+
+    def phi(self):
+        phi = polyeig(self.K,self.C,self.M)[0]
+        if not np.all(np.isclose(np.imag(phi),0,atol=1e-2)):
+            logging.warning('Warning: imaginary part of phi is not zero')
+        return np.real(phi)
+
+    def phi_no_damping(self):
+        phi = eig(self.K,self.M)[1]
+        if not np.all(np.isclose(np.imag(phi),0,atol=1e-2)):
+            logging.warning('Warning: imaginary part of phi is not zero')
+        return np.real(phi)
 
     def damping_ratio(self):
-        w = self.eigenvalues()
-        omega_n = np.abs(w/2/np.pi)
-        zeta = -np.real(w)/omega_n
+        poles = self.eigenvalues()
+        w_n = np.abs(poles)
+        zeta = -np.real(poles)/w_n
         return zeta
 
     def rayleigh_damping_coef(self):
         zeta = self.damping_ratio()
         zeta = zeta[:2]
-        omega_n = self.resonance_frequency()*2*np.pi
-        omega_n = omega_n[:2]
-        Left = 1/2*np.array([[1/omega_n[0],omega_n[0]],
-                            [1/omega_n[1],omega_n[1]]])
+        w_n = np.abs(self.eigenvalues())
+        
+        Left = np.array([[1/w_n[0],w_n[0]],
+                            [1/w_n[1],w_n[1]]])
         Right = np.array([[zeta[0]],[zeta[1]]])
-        coef = np.linalg.solve(Left,Right)
+        coef = np.linalg.solve(Left,2*Right)
         return coef
 
     
@@ -109,6 +125,7 @@ class MdofSystem:
         assert is_diagonal(self.M), "M is not diagonal"
         assert check_rank_matrix((self.M, self.K, self.C)), "M or K is not full rank"
 
+    
     def transfer_function(self,omega:np.ndarray,i:int,j:int):
         s= 1j*omega
         M_s2 = np.einsum('ij,k->ijk', self.M, s**2)
@@ -125,20 +142,22 @@ class MdofSystem:
         return H_ij
     
     def project_modal(self, x):
-        v = self.eigenvecs()
-        return v.conj().T@x@v
+        v = self.phi_no_damping()
+        return v.T@x@v
     
     def modal_matrices(self):
-        v = self.eigenvecs()
         
         coef = self.rayleigh_damping_coef()
-        omega_n = self.resonance_frequency()*2*np.pi
+        omega_n = np.abs(self.eigenvalues())
         m_modal = self.project_modal(self.M)
         k_modal = self.project_modal(self.K)
         c_modal = self.project_modal(self.C)
         xi_modal = coef[0]/2*1/omega_n + coef[1]/2*omega_n
 
         return m_modal,k_modal,c_modal,xi_modal
+
+        
+
           
         
         

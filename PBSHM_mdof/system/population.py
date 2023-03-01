@@ -7,16 +7,36 @@ from .baseline_config import load_config_file, extract_variables
 class Population:
     """ class that handels the population of systems. """    
 
-    def __init__(self, systems:dict=dict()):
+    def __init__(self, systems:dict=dict(),name:str='POPULATION_1'):
         self.systems_params = systems
+        self.name:str = name
         self.systems_matrices =dict()
         self.state:str = 'healthy'
         self.anomaly_level = 0
-        self.name:str = 'POPULATION_1' 
 
     def compute_systems_matrices(self):
         for key,values in self.systems_params.items():
             self.systems_matrices[key] = build_system_matrices(values)
+    
+    def heterogenise(self,std:float=0.01,inplace:bool=False):
+        """ Heterogenises the population of systems by adding a random noise to
+        the stiffness values
+        Parameters
+        ----------
+        std : float, optional
+            Standard deviation of the normal distribution used to generate the
+            random noise. The default is 0.1.
+        """
+        if inplace==False:
+            population_c = self.copy()
+        else :
+            population_c = self
+        N=len(self.systems_params)
+        k_var = np.random.normal(0,std,N)
+        for i,(key,values) in enumerate(population_c.items()):
+            self.systems_params[key]['stiffness'] = values['stiffness'] *(1- k_var[i])
+        self.compute_systems_matrices()
+
 
     def generate_population(self):
         """ Generates the system parameters for the population of systems.
@@ -42,6 +62,8 @@ class Population:
             
             self.systems_params[f'system_{i}']=system_variables
         self.compute_systems_matrices()
+    
+
 
 
 

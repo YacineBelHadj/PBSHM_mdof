@@ -33,11 +33,11 @@ class DenseSignalClassifier(tf.keras.Model):
             h = layer(h)
         return h
 
-    def build_model(self):
+    def build_model(self,loss='categorical_crossentropy',**kwargs):
         inputLayer = Input(shape=(self.inputDim))
         out = self(inputLayer)
         model = Model(inputs=inputLayer, outputs=out)
-        model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+        model.compile(optimizer='adam', loss=, metrics=['accuracy'],**kwargs)
         return model
 
 if __name__=='__main__':
