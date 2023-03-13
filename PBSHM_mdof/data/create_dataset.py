@@ -4,7 +4,6 @@ from PBSHM_mdof.system.population import Population
 from PBSHM_mdof.system.mdof_system import MdofSystem
 from PBSHM_mdof.system.population_manipulator import PopulationManipulator
 from utils import resonance_frequency_computation
-import cProfile
 
 from config import settings
 import numpy as np
@@ -28,14 +27,14 @@ def main():
     population.load_population(population_params_path)
     logging.info(f'Loaded population from file {population_params_path}')
     pop_manipulator = PopulationManipulator(population)
-    std_latent = 30
 
     with h5py.File(path_dataset, 'w') as f:
         dh = HDF5DataBuilder(f)
         
         # Save healthy simulations and population parameters
         pop_grp = dh.set_save_population(population=population)
-        std_latent = 25
+        std_latent = 30
+        mean_latent = 120
         simulation_name='default_simulation'
         simu_grp = dh.set_save_simulation_params(pop_grp,simulation_name, dt=dt, t_end=t_end, std_latent=std_latent)
 
@@ -44,9 +43,9 @@ def main():
         for i in tqdm(range(1200)):
             # parameter for the simulation
             anomaly_level=0
-            amplitude = np.square(np.random.normal(5, 15)) + 1
+            amplitude = np.square(np.random.normal(5, 15)) + 50
             loc = 7
-            latent_value = np.random.normal(50, std_latent)
+            latent_value = np.random.normal(mean_latent, std_latent)
             experiment_name = f'experiment_{i}_{state}_{anomaly_level}'
 
             # do experiments
@@ -69,9 +68,9 @@ def main():
             for i in tqdm(range(200)):
                 # parameter for the simulation
                 ai = anomaly_level/100
-                amplitude = np.square(np.random.normal(5, 15)) + 1
+                amplitude = np.square(np.random.normal(5, 15)) + 50
                 loc = 7
-                latent_value = np.random.normal(50, std_latent)
+                latent_value = np.random.normal(mean_latent, std_latent)
                 experiment_name = f'experiment_{i}_{state}_{ai}'
                 # do experiments
                 requests = [{'type': 'environment', 'latent_value': latent_value, 'coefficients': 'load'},

@@ -90,3 +90,6 @@ target/
 
 # Ignore dynaconf secret files
 .secrets.*
+logs/
+mlruns/
+docs/

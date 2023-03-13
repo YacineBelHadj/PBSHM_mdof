@@ -7,6 +7,7 @@ from pathlib import Path
 from scipy.signal import welch
 from tqdm import tqdm
 from config import settings
+import matplotlib.pyplot as plt
 
 def compute_PSD(signal_data, dt, nperseg=1024):
     f, psd = welch(signal_data, 1/dt, nperseg=nperseg, scaling='spectrum')
@@ -17,7 +18,7 @@ def main():
 
     # open the original HDF5 file
     path_generated_dataset = Path(settings.default['path']['abspath']) / Path(settings.default['path']['generated_dataset'])
-    path_saved_data = Path(settings.default['path']['abspath']) / 'data' / 'processed4' / 'data.parquet'
+    path_saved_data = Path(settings.default['path']['abspath']) / 'data' / 'processed6' / 'data.parquet'
 
     result_list = []  # create an empty list to hold the result dictionaries
 
@@ -29,6 +30,10 @@ def main():
         # loop over the data and compute the PSDs
         for d in tqdm(iterator):
             tdd = d['TDD']
+            print(tdd['system_0'])
+            plt.plot(tdd['system_0'][:, 2 * 8 + 1][:-5])
+            plt.show()
+            plt.close()
             for k, v in tdd.items():
                 acc_7 = v[:, 2 * 8 + 1]
                 f, psd = compute_PSD(acc_7, dt)

@@ -170,6 +170,13 @@ class HDF5DataBuilder:
         dt = simulation_group.attrs['dt']
         self.logger.info(f'population {population_name} simulation {simulation_name} dt loaded')
         return dt
+    
+    def get_simulation_latent_std(self, population_name, simulation_name):
+        population_group = self.file[population_name]
+        simulation_group = population_group[simulation_name]
+        latent_std = simulation_group.attrs['latent_std']
+        self.logger.info(f'population {population_name} simulation {simulation_name} latent_std loaded')
+        return latent_std
 
     
     def get_data_iterator(self):
