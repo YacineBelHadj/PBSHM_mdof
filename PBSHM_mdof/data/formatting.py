@@ -10,9 +10,9 @@ from PBSHM_mdof.visualization.visualize import plot_psd_example
 import matplotlib.pyplot as plt
 logging.basicConfig(level=logging.INFO)
 
-def format_data(test_size=0.3,data_name='data.parquet',verbose=False):
+def format_data(test_size=0.3,data_name='no_noise.parquet',verbose=False):
     # set path to parquet file
-    path_processed_data = Path(settings.default['path']['abspath']) / 'data' / 'processed5' / data_name
+    path_processed_data = Path(settings.default['path']['abspath']) / 'data' / 'processed_psd_new' / data_name
 
     # read parquet file into PyArrow table
     table = pq.read_table(str(path_processed_data))

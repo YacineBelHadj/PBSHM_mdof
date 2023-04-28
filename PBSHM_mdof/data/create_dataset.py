@@ -33,8 +33,8 @@ def main():
         
         # Save healthy simulations and population parameters
         pop_grp = dh.set_save_population(population=population)
-        std_latent = 30
-        mean_latent = 120
+        std_latent = 20
+        mean_latent = 50
         simulation_name='default_simulation'
         simu_grp = dh.set_save_simulation_params(pop_grp,simulation_name, dt=dt, t_end=t_end, std_latent=std_latent)
 
@@ -42,18 +42,32 @@ def main():
         state = 'healthy'
         for i in tqdm(range(1200)):
             # parameter for the simulation
+            amplitude = 5 * (-np.log(1-np.random.uniform(0, 1 )))**(1/1.9)+10
             anomaly_level=0
-            amplitude = np.square(np.random.normal(5, 15)) + 50
             loc = 7
             latent_value = np.random.normal(mean_latent, std_latent)
             experiment_name = f'experiment_{i}_{state}_{anomaly_level}'
 
             # do experiments
 
-            requests = [{'type': 'environment', 'latent_value': latent_value, 'coefficients': 'load'}]
-            population_affected = pop_manipulator.affect(requests)
-            simulator = Simulation(population_affected, dt, t_end)
-            simulation_data = simulator.simulation_white_noise(location=loc, amplitude=amplitude)
+            
+            attempt = 1
+            run =True
+            while run : 
+                requests = [{'type': 'environment', 'latent_value': latent_value, 'coefficients': 'load'}]
+                population_affected = pop_manipulator.affect(requests)
+                simulator = Simulation(population_affected, dt, t_end)
+                simulation_data = simulator.simulation_white_noise(location=loc, amplitude=amplitude)
+                if simulation_data is None:
+                    latent_value = np.random.normal(mean_latent, std_latent)
+                    amplitude = np.sqrt(np.square(np.random.normal(15, 5)) + 10)
+                    logging.info(f'Attempt {attempt} for simulation {i}')
+                    attempt += 1
+
+                else:
+                    run=False 
+
+            
             # save experiments
             exp_grp = dh.set_save_experiment_params(simu_grp, experiment_name, latent_value, anomaly_level, state, loc, amplitude)
             dh.save_experiment_population_params(exp_grp, population_affected)
@@ -68,17 +82,27 @@ def main():
             for i in tqdm(range(200)):
                 # parameter for the simulation
                 ai = anomaly_level/100
-                amplitude = np.square(np.random.normal(5, 15)) + 50
+                amplitude = 5 * (-np.log(1-np.random.uniform(0, 1)))**(1/1.9)+10
                 loc = 7
                 latent_value = np.random.normal(mean_latent, std_latent)
                 experiment_name = f'experiment_{i}_{state}_{ai}'
                 # do experiments
-                requests = [{'type': 'environment', 'latent_value': latent_value, 'coefficients': 'load'},
+                attempt = 1
+                run =True
+                while run : 
+                    requests = [{'type': 'environment', 'latent_value': latent_value, 'coefficients': 'load'},
                             {'type': 'anomaly', 'location': 5, 'anomaly_size': ai, 'anomaly_type': 'stiffness'}]
-                
-                population_affected = pop_manipulator.affect(requests)
-                simulator = Simulation(population_affected, dt, t_end)
-                simulation_data = simulator.simulation_white_noise(location=loc, amplitude=amplitude)
+                    population_affected = pop_manipulator.affect(requests)
+                    simulator = Simulation(population_affected, dt, t_end)
+                    simulation_data = simulator.simulation_white_noise(location=loc, amplitude=amplitude)
+                    if simulation_data is None:
+                        latent_value = np.random.normal(mean_latent, std_latent)
+                        amplitude = np.sqrt(np.square(np.random.normal(15, 5)) + 10)
+                        logging.info(f'Attempt {attempt} for simulation {i}')
+                        attempt += 1
+
+                    else:
+                        run=False 
 
                 
                 exp_grp = dh.set_save_experiment_params(simu_grp, experiment_name, latent_value, ai, state, loc, amplitude)

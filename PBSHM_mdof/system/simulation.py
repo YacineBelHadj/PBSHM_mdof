@@ -3,6 +3,20 @@ from scipy import signal
 import h5py
 from .mdof_system import MdofSystem
 from .population import Population
+import logging
+
+# Create logger and set level
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+# Create file handler and set format
+file_handler = logging.FileHandler('logs/generate_data.log')
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(formatter)
+
+# Add file handler to logger
+logger.addHandler(file_handler)
+
 
 class Simulation:
     """
@@ -13,15 +27,18 @@ class Simulation:
         self.t_end = t_end
 
     def simulation_white_noise(self,location: int = 7,amplitude: float = 300):
-        t = np.arange(0, self.t_end, self.dt)
-        data = {}
-        
-        for sys_name,sys_param in self.population.systems_matrices.items():
-            sys = MdofSystem(**sys_param)
-            u, (t_out_,y,x_)=sys.simulate_white_noise(t=t,location=location,amplitude=amplitude)
+            t = np.arange(0, self.t_end, self.dt)
+            data = {}
+            
+            for sys_name,sys_param in self.population.systems_matrices.items():
+                sys = MdofSystem(**sys_param)
+                u, (t_out_,y,x_)=sys.simulate_white_noise(t=t,location=location,amplitude=amplitude)
+                if np.isnan(y).any() or y.max() > amplitude * 1e3:
+                    logger.warning(f'Nan in simulation {sys_name}')
+                    return None
 
-            data[sys_name] = {'time':t,'input':u,'output':y}
-        return data
+                data[sys_name] = {'time':t,'input':u,'output':y}
+            return data
 
     def simulation_white_noise_tf(self,i: int = 7,j:int=1,amplitude: float = 300):
         omega = np.arange(0, 1/self.dt, 1/self.t_end)

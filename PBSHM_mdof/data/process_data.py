@@ -8,6 +8,30 @@ from scipy.signal import welch
 from tqdm import tqdm
 from config import settings
 import matplotlib.pyplot as plt
+import numpy as np
+
+SNR = 5
+
+def data_name_SNR(SNR=None):
+    if SNR == None:
+        data_name = 'no_noise.parquet'
+    else:
+        data_name = f'SNR_{SNR}.parquet'
+    return data_name
+
+data_name = data_name_SNR(SNR)
+
+
+def noise_std(SNR_dB,RMS_signal=15):
+    SNR_lin = 10**(SNR_dB/20)
+    RMS_noise = RMS_signal/SNR_lin
+    std_noise = RMS_noise
+    return std_noise
+
+def generate_noise(SNR_dB,signal_length):
+    std_noise = noise_std(SNR_dB)
+    noise = np.random.normal(0,std_noise,signal_length)
+    return noise
 
 def compute_PSD(signal_data, dt, nperseg=1024):
     f, psd = welch(signal_data, 1/dt, nperseg=nperseg, scaling='spectrum')
@@ -18,7 +42,8 @@ def main():
 
     # open the original HDF5 file
     path_generated_dataset = Path(settings.default['path']['abspath']) / Path(settings.default['path']['generated_dataset'])
-    path_saved_data = Path(settings.default['path']['abspath']) / 'data' / 'processed6' / 'data.parquet'
+    print(path_generated_dataset)
+    path_saved_data = Path(settings.default['path']['abspath']) / 'data' / 'processed_psd_new' / data_name
 
     result_list = []  # create an empty list to hold the result dictionaries
 
@@ -30,12 +55,12 @@ def main():
         # loop over the data and compute the PSDs
         for d in tqdm(iterator):
             tdd = d['TDD']
-            print(tdd['system_0'])
-            plt.plot(tdd['system_0'][:, 2 * 8 + 1][:-5])
-            plt.show()
-            plt.close()
+
             for k, v in tdd.items():
                 acc_7 = v[:, 2 * 8 + 1]
+                if SNR != None:
+                    noise = generate_noise(SNR, len(acc_7))
+                    acc_7 = acc_7 + noise
                 f, psd = compute_PSD(acc_7, dt)
                 system_name = k
                 anomaly_level = d['experiment_params']['anomaly_level']
@@ -50,7 +75,7 @@ def main():
                                 'resonance_freq': fr, 
                                 'anomaly_level': anomaly_level,
                                 'state': state, 
-                                'latent_value': latent_value}
+                                'latent_value': latent_value,'SNR':SNR}
                 result_list.append(result_dict)  # append the result dict to the list
 
     # convert the list of result dicts to a PyArrow Table and save to Parquet file

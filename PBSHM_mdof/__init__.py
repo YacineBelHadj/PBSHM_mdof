@@ -1,4 +1,4 @@
-from PBSHM_mdof import system, models, features, visualization
+from PBSHM_mdof import system, models, visualization
 
 from pathlib import Path
 

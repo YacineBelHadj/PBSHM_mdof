@@ -3,7 +3,7 @@
 import tensorflow as tf
 from datetime import datetime
 from PBSHM_mdof.data.formatting import format_data
-from PBSHM_mdof.models.classification.dense_nn import DenseSignalClassifier
+from PBSHM_mdof.models.classification.dense_nn import DenseSignalClassifier, get_loss
 
 import numpy as np 
 import matplotlib.pyplot as plt
@@ -34,17 +34,18 @@ latent_mean = np.around(df['latent_value'].mean())
 training_size = len(index_train/num_class)
 heterogenity = 0
 loss_function = 'categorical_crossentropy'
-layers =[16]
+layers =[512, 256, 128, 64, 32]
 optimizer = 'adam'
 dropout_rate = 0
 model = "DenseSignalClassifier"
 activation = 'ReLU'
 batch_norm = True
+l1_reg = 0.0001
 # prepare dataframe for plotting
 #%%
 df_result = df[['system_name','anomaly_level','state','latent_value']]
 df_result['type']= 'test'
-df_result['type'].iloc[index_train] = 'train'
+df_result.loc[index_train, 'type'] = 'train'
 
 # Start MLflow run
 
@@ -64,7 +65,7 @@ with mlflow.start_run():
     mlflow.log_param("training_size", training_size)
     mlflow.log_param("latent_mean", latent_mean)
     mlflow.log_param("activation", activation)
-
+    mlflow.log_param("l1_reg", l1_reg)
 
     # Define the model and log it to MLflow
     model_ = eval(model)(inputDim=(psds_train[0].shape[-1]),
@@ -72,9 +73,10 @@ with mlflow.start_run():
                                     dense_layers=layers,
                                     dropout_rate=dropout_rate,
                                     batch_norm=batch_norm,
-                                    activation=activation
+                                    activation=activation,
+                                    l1_reg=l1_reg
                                     )
-    model_=model_.build_model(loss=loss_function, optimizer=optimizer)
+    model_=model_.build_model(optimizer=optimizer)
 
     # Log the model architecture to MLflow
     mlflow.keras.log_model(model_, "model")
@@ -103,7 +105,9 @@ with mlflow.start_run():
     metrics={}
     model_.fit(psds_train, system_id_train, epochs=100, batch_size=64,verbose=1,validation_split=0.2,
               callbacks=[early_stopping_callback,reduce_lr,model_checkpoint_callback])
-    best_model = tf.keras.models.load_model("best_model.h5", custom_objects={model: eval(model)})
+    best_model = tf.keras.models.load_model('best_model.h5',
+                                             custom_objects={'DenseSignalClassifier': DenseSignalClassifier, 
+                                                             'loss_fn': get_loss(temperature=1)})
 
 
     # Log the trained model to MLflow
@@ -143,24 +147,27 @@ with mlflow.start_run():
         fig.savefig('docs/'+system_id+'.png')
         mlflow.log_artifact('docs/'+system_id+'.png','Control chart')
         plt.close(fig)
+# %%
+    df_resfreq = pd.DataFrame(np.stack(df['resonance_freq'].values))
+
+
+
+    result_freq = {}
+    for id in system_name:
+        index_system = df[df['system_name'] == id].index
+        result_freq[id] = {f'freq_{i}': freq for i,freq in enumerate(np.stack(df_resfreq.loc[index_system].values).T)}
+        result_freq[id]['anomaly level'] = df.loc[index_system]['anomaly_level'].astype(float).values
+        result_freq[id]['system_name'] = df.loc[index_system]['system_name'].values
+        result_freq[id]['latent_value'] = df.loc[index_system]['latent_value'].values
+    # %%
+    plot_control_chart_latent('system_14', result_freq,column='freq_7',ylabel='Resonance frequency of mode 7(Hz)')
+    plt.show()
+    plt.close()
 
 
 
 
 # %%
-df_resfreq = pd.DataFrame(np.stack(df['resonance_freq'].values))
-
-
-
-result_freq = {}
-for id in system_name:
-    index_system = df[df['system_name'] == id].index
-    result_freq[id] = {f'freq_{i}': freq for i,freq in enumerate(np.stack(df_resfreq.loc[index_system].values).T)}
-    result_freq[id]['anomaly level'] = df.loc[index_system]['anomaly_level'].astype(float).values
-    result_freq[id]['system_name'] = df.loc[index_system]['system_name'].values
-    result_freq[id]['latent_value'] = df.loc[index_system]['latent_value'].values
-# %%
-plot_control_chart_latent('system_10', result_freq,column='freq_0')
-plt.show()
-plt.close()
+# %load_ext autoreload
+# %autoreload 2
 # %%
