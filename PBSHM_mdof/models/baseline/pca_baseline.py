@@ -30,7 +30,7 @@ def prepare_data_pca(df, system_name,noise):
     arg_sorted=all_res.argsort(axis=1)
     all_res=all_res[np.arange(all_res.shape[0])[:,None], arg_sorted]
     print(all_res.shape)
-    all_res = all_res[:,:-3]
+    all_res = all_res[:,:-1]
     print(all_res.shape)
     all_res = all_res + np.random.normal(0, noise, all_res.shape)
     training_res = all_res[0:training_size,:]

@@ -36,6 +36,11 @@ class DenseSignalClassifier(tf.keras.Model):
         for layer in self.hidden_layers:
             h = layer(h)
         return h
+    def call_encoder_penultimate(self,input:tf.Tensor,training=False):
+        h = input
+        for layer in self.hidden_layers[:-3]:
+            h = layer(h)
+        return h
     
     def call_classifier(self,input:tf.Tensor,training=False):
         logits = self.final_layer(input)

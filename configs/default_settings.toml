@@ -1,5 +1,5 @@
 [default]
 path ={origin ="./data", population_params = 'data/systems/systems_healthy.json', generated_dataset='data/raw/datatest.hdf5', abspath='/home/yacine/Documents/PhD/Code/LocalProject/PBSHM_mdof'}
-preprocessing_parameters={nperseg=1024}
-simulation = {dt=0.0025,t_end = 10}
+preprocessing_parameters={nperseg=2048}
+simulation = {dt=0.0025,t_end = 20}
 latent_coef = [1e-8,-200,-200,3575,-300,-3500,+1000,-450]

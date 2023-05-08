@@ -1,57 +1,45 @@
 PBSHM_mdof
 ==============================
 
-In this project, I try to simulate an Mdof sys all of this is done in the context of population based monitoring.
+In this project, I try to simulate an Mdof sys all of this is done in the context of population based Structural Health Monitroing, 
+The folder PBSHM contains the main code and notebooks folder is used to generate figures.
+If you want to replicate the result, you have to first load the project and install the packages PBSHM_mdof 
+The folder PBSHM_mdof/system contains the tools for simulating a population of mdof system (time domain simulation) Including the effect of envirement on the structure adding anomaly .
+The folder PBSHM_mdof/data : contains a file create_dataset, where we generate the time_domain data of the 20 8-dof system and save them in an HDF5 file format. the structure of the HDF5 file is as follow:
 
-Project Organization
-------------
+-  The top-level group is a population group, with the name of the population being the name of the group. Each population group has a group named "population_params" that contains the parameters for the systems in the population.
+- Each system in the population has a group named after the system name under the "population_params" group. Each system group contains datasets for the mass, stiffness, and damping parameters.
+Under each population group, there can be multiple simulation groups, named after the simulation. Each simulation group contains attributes for the simulation parameters, such as time step (dt), end time (t_end), and standard deviation of the latent variables (std_latent).
+- Each simulation group contains multiple experiment groups, named after the experiment. Each experiment group contains attributes for the experiment parameters, such as the latent value, anomaly level, state, input location, and amplitude.
+-Each experiment group contains a group named "resonance_frequency" that contains datasets for the resonance frequencies of the systems in the population, and a group named "stiffness" that contains datasets for the stiffness parameters of the systems in the population.
+- Each experiment group also contains a group named "TDD" that contains datasets for time-domain data for the experiment, 
+THe data in a tree format is as follow
+Population Group
+    "population_params" Group
+        System Group
+            Mass Dataset
+            Stiffness Dataset
+            Damping Dataset
+    Simulation Group
+        Resonance Frequency Group
+            Frequency Datasets for each system in the population
+        Stiffness Group
+            Stiffness Datasets for each system in the population
+        Experiment Group
+            Latent Value Attribute
+            Anomaly Level Attribute
+            State Attribute
+            Input Location Attribute
+            Amplitude Attribute    
+        Time-Domain Data Group (TDD)
+            Output Dataset
 
-    ├── LICENSE
-    ├── Makefile           <- Makefile with commands like `make data` or `make train`
-    ├── README.md          <- The top-level README for developers using this project.
-    ├── data
-    │   ├── external       <- Data from third party sources.
-    │   ├── interim        <- Intermediate data that has been transformed.
-    │   ├── processed      <- The final, canonical data sets for modeling.
-    │   └── raw            <- The original, immutable data dump.
-    │
-    ├── docs               <- A default Sphinx project; see sphinx-doc.org for details
-    │
-    ├── models             <- Trained and serialized models, model predictions, or model summaries
-    │
-    ├── notebooks          <- Jupyter notebooks. Naming convention is a number (for ordering),
-    │                         the creator's initials, and a short `-` delimited description, e.g.
-    │                         `1.0-jqp-initial-data-exploration`.
-    │
-    ├── references         <- Data dictionaries, manuals, and all other explanatory materials.
-    │
-    ├── reports            <- Generated analysis as HTML, PDF, LaTeX, etc.
-    │   └── figures        <- Generated graphics and figures to be used in reporting
-    │
-    ├── requirements.txt   <- The requirements file for reproducing the analysis environment, e.g.
-    │                         generated with `pip freeze > requirements.txt`
-    │
-    ├── setup.py           <- makes project pip installable (pip install -e .) so src can be imported
-    ├── src                <- Source code for use in this project.
-    │   ├── __init__.py    <- Makes src a Python module
-    │   │
-    │   ├── data           <- Scripts to download or generate data
-    │   │   └── make_dataset.py
-    │   │
-    │   ├── features       <- Scripts to turn raw data into features for modeling
-    │   │   └── build_features.py
-    │   │
-    │   ├── models         <- Scripts to train models and then use trained models to make
-    │   │   │                 predictions
-    │   │   ├── predict_model.py
-    │   │   └── train_model.py
-    │   │
-    │   └── visualization  <- Scripts to create exploratory and results oriented visualizations
-    │       └── visualize.py
-    │
-    └── tox.ini            <- tox file with settings for running tox; see tox.readthedocs.io
+As can be seen all the meta data is saved for each similation use the .visit(print) command to explore the file.
+ 
+The file process_data, load the TDD and compute the PSD with different noise level and save the result in parquet file 
+==> the data can be found on Zenodo.
 
+The folder PBSHM_mdof/models handels the model implimentaion (baseline and the zero-shot classifier for anomaly detection). on the baseline subfolder the baseline method is defined. In train_model.py we train the classifier for zero-shot anomaly detection. The current implimentation allows for saving the result in MLFLOW
 
---------
-
-<p><small>Project based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>
+docs folder contains images used for publications.
+Only the processed data is available in zenodo.

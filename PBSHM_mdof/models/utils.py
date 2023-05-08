@@ -27,12 +27,15 @@ def compute_auc_df(df,col_name='confidence'):
     for system_id in system_name:
         healthy_training_data = df[col_name][(df['system_name'] == system_id) & (df['type'] == 'train')]
         healthy_testing_data = df[col_name][(df['system_name'] == system_id) & (df['type'] == 'validation')]
+      
+        
         for al in anomaly_level:
             if al == 0:
                 auc = compute_auc(healthy_training_data, healthy_testing_data)
             else:
-                healthy_testing_data = df[col_name][(df['system_name'] == system_id) & (df['type'] == 'validation')]
                 anomaly_data = df[col_name][(df['system_name'] == system_id) & (df['type'] == 'test') & (df['anomaly_level'] == al)]
+                healthy_testing_data = df[col_name][(df['system_name'] == system_id) & (df['type'] == 'validation')].iloc[-len(anomaly_data):]
+                assert len(anomaly_data) == len(healthy_testing_data)
                 auc = compute_auc(healthy_testing_data, anomaly_data)
             auc_df.loc[f'auc_{al}', system_id] = auc
     return auc_df
@@ -94,6 +97,7 @@ def plot_control_chart(statstic: np.ndarray, anomaly_level: dict, training_lim:i
     if len(allert) > 0:
         ax.plot(allert, statstic[allert], marker='o',linestyle='', color='firebrick', markersize=3)
     return ax
+
 def get_text_location(ax,shift:float=0.1):
     y_lowbound, y_upbound= ax.get_ylim()
     middle = (y_lowbound + y_upbound) / 2
@@ -106,7 +110,7 @@ def plot_control_chart(df,system_id, column='confidence', ax=None):
         fig, ax = plt.subplots(figsize=(10, 5))
     data_system = df[df['system_name'] == system_id]
     df_train = data_system[data_system['type'] == 'train']
-    df_test = data_system[data_system['type'] == 'test']
+    df_test = data_system[data_system['type'] == 'validation']
     df_test= df_test.sort_values(by='anomaly_level', ascending=True)
 
     df_plot = pd.concat([df_train, df_test])
@@ -122,7 +126,7 @@ def plot_control_chart(df,system_id, column='confidence', ax=None):
 
 
     ax.axvline(x=len(df_train), color='firebrick', linestyle='--', alpha=0.5)
-    ax.text(len(df_train), text_y, 'test data', rotation=90, color='firebrick', alpha=0.9)
+    #ax.text(len(df_train), text_y, 'test data', rotation=90, color='firebrick', alpha=0.9)
     for key in list(anomaly_level.keys())[1:]:
         ax.axvline(x=key, color='firebrick', linestyle='--', alpha=0.5)
         ax.text(key, text_y, anomaly_level[key], color='black', alpha=1,rotation=90)

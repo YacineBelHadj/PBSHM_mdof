@@ -1,4 +1,5 @@
 from PBSHM_mdof.data.data_handler import HDF5DataBuilder
+from PBSHM_mdof.data.noise_manipulator import generate_noise
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
@@ -9,31 +10,21 @@ from tqdm import tqdm
 from config import settings
 import matplotlib.pyplot as plt
 import numpy as np
-
-SNR = 5
-
-def data_name_SNR(SNR=None):
-    if SNR == None:
-        data_name = 'no_noise.parquet'
-    else:
-        data_name = f'SNR_{SNR}.parquet'
-    return data_name
-
-data_name = data_name_SNR(SNR)
+from PBSHM_mdof.data.utils import data_name_SNR_nperseg
+"""In this script, we will compute the PSD of the data and save it as a parquet file.
+The PSD will be computed for each system and each anomaly level.
+precise the SNR and the nperseg 
+"""
+SNR = 10
+RMS_signal = 55 
+nperseg = 1024
 
 
-def noise_std(SNR_dB,RMS_signal=15):
-    SNR_lin = 10**(SNR_dB/20)
-    RMS_noise = RMS_signal/SNR_lin
-    std_noise = RMS_noise
-    return std_noise
+data_name = data_name_SNR_nperseg(SNR,nperseg)
 
-def generate_noise(SNR_dB,signal_length):
-    std_noise = noise_std(SNR_dB)
-    noise = np.random.normal(0,std_noise,signal_length)
-    return noise
 
-def compute_PSD(signal_data, dt, nperseg=1024):
+
+def compute_PSD(signal_data, dt, nperseg):
     f, psd = welch(signal_data, 1/dt, nperseg=nperseg, scaling='spectrum')
     return f, psd
 
@@ -43,7 +34,7 @@ def main():
     # open the original HDF5 file
     path_generated_dataset = Path(settings.default['path']['abspath']) / Path(settings.default['path']['generated_dataset'])
     print(path_generated_dataset)
-    path_saved_data = Path(settings.default['path']['abspath']) / 'data' / 'processed_psd_new' / data_name
+    path_saved_data = Path(settings.default['path']['abspath']) / 'data' / 'processed_psd' / data_name
 
     result_list = []  # create an empty list to hold the result dictionaries
 
@@ -59,9 +50,9 @@ def main():
             for k, v in tdd.items():
                 acc_7 = v[:, 2 * 8 + 1]
                 if SNR != None:
-                    noise = generate_noise(SNR, len(acc_7))
+                    noise = generate_noise(SNR,signal_length= len(acc_7),RMS_signal=RMS_signal)
                     acc_7 = acc_7 + noise
-                f, psd = compute_PSD(acc_7, dt)
+                f, psd = compute_PSD(acc_7, dt,nperseg=nperseg)
                 system_name = k
                 anomaly_level = d['experiment_params']['anomaly_level']
                 state = d['experiment_params']['state']
