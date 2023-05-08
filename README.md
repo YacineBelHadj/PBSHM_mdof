@@ -14,25 +14,28 @@ Under each population group, there can be multiple simulation groups, named afte
 -Each experiment group contains a group named "resonance_frequency" that contains datasets for the resonance frequencies of the systems in the population, and a group named "stiffness" that contains datasets for the stiffness parameters of the systems in the population.
 - Each experiment group also contains a group named "TDD" that contains datasets for time-domain data for the experiment, 
 THe data in a tree format is as follow
-Population Group
-    "population_params" Group
-        System Group
-            Mass Dataset
-            Stiffness Dataset
-            Damping Dataset
-    Simulation Group
-        Resonance Frequency Group
-            Frequency Datasets for each system in the population
-        Stiffness Group
-            Stiffness Datasets for each system in the population
-        Experiment Group
-            Latent Value Attribute
-            Anomaly Level Attribute
-            State Attribute
-            Input Location Attribute
-            Amplitude Attribute    
-        Time-Domain Data Group (TDD)
-            Output Dataset
+- Population Group
+  - "population_params" Group
+    - System Group
+      - Mass Dataset
+      - Stiffness Dataset
+      - Damping Dataset
+  - Simulation Group
+    - Resonance Frequency Group
+      - Frequency Datasets for each system in the population
+    - Stiffness Group
+      - Stiffness Datasets for each system in the population
+    - Experiment Group
+      - Latent Value Attribute
+      - Anomaly Level Attribute
+      - State Attribute
+      - Input Location Attribute
+      - Amplitude Attribute
+      - Time-Domain Data Group (TDD)
+        - Output Dataset
+      - Frequency-Domain Data Group (FDD)
+        - Output Dataset
+
 
 As can be seen all the meta data is saved for each similation use the .visit(print) command to explore the file.
  
