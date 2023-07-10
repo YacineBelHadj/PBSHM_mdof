@@ -13,6 +13,26 @@ from pathlib import Path
 abspath = settings.default['path']['abspath']
 log_path = Path(abspath)/Path('logs/loading_data.log')
 class HDF5DataBuilder:
+    """This class is used to build the HDF5 file containing the data.
+    The data is saved in the following format:
+    - POPULATION_1
+        - population_params 
+            - system_1
+                - mass
+                - stiffness
+                - damping
+            - system_2 
+
+        - default_simulation
+            - TDD
+                - system_1  
+                    - acc_1
+                    - acc_2 
+
+                - system_2
+    
+            setting of simulation
+    """
 
     def __init__(self, file: h5py.File):
         self.file = file 

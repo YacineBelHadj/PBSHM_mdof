@@ -11,6 +11,10 @@ import matplotlib.pyplot as plt
 logging.basicConfig(level=logging.INFO)
 
 def format_data(test_size=0.3,data_name='no_noise.parquet',verbose=False):
+    """This function formats the data for the training of the classifier.
+    It reads the parquet file, splits the data into train and test set and
+    returns the train and test set as PyArrow tables.
+    """
     # set path to parquet file
     path_processed_data = Path(settings.default['path']['abspath']) / 'data' / 'processed_psd_new' / data_name
 
